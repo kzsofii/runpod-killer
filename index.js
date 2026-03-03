@@ -56,6 +56,7 @@ async function main() {
 
   const records = await getAirtableRecords();
   const validPodNames = new Set();
+  const slackIdByPodName = {};
 
   for (const record of records) {
     const f = record.fields;
@@ -68,23 +69,23 @@ async function main() {
 
     const days = daysDiff(expiry);
 
-    // Keep track of valid (approved + not yet expired) pods
     if (days >= 0) {
       validPodNames.add(podName.trim().toLowerCase());
+      if (slackId) slackIdByPodName[podName.trim().toLowerCase()] = slackId;
     }
 
-    // Send reminders
-    if (slackId && (days === 3 || days === 1 || days === 0)) {
-      let message;
-      if (days === 3) {
-        message = `⚠️ Reminder: Your compute pod *${podName}* expires in 3 days. If you need an extension, please submit another form and we'll try to review it on time!`;
-      } else if (days === 1) {
-        message = `🚨 Reminder: Your compute pod *${podName}* expires tomorrow! If you need an extension, please submit another form and we'll try to review it on time!`;
-      } else if (days === 0) {
-        message = `🔴 Your compute pod *${podName}* expires today! If you need an extension, please submit another form ASAP and we'll try to review it on time!`;
-      }
-      console.log(`Sending ${days}-day reminder to ${slackId} for pod ${podName}`);
-      await sendSlackMessage(slackId, message);
+    if (slackId && days === 3) {
+      await sendSlackMessage(slackId,
+        `Hello! Just a heads up — your pod ${podName} expires in 3 days at midnight. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Hope you're having fun working on your project!🦾`
+      );
+      console.log(`Sent 3-day reminder to ${slackId} for pod ${podName}`);
+    }
+
+    if (slackId && days === 1) {
+      await sendSlackMessage(slackId,
+        `Hello! Your pod ${podName} expires tomorrow at midnight. Make sure to finish up by then because your pod will be deleted. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Good luck with your work!👩🏻‍💻`
+      );
+      console.log(`Sent 1-day reminder to ${slackId} for pod ${podName}`);
     }
   }
 
@@ -99,7 +100,13 @@ async function main() {
       const success = await deletePod(pod.id);
       if (success) {
         console.log(`✅ Deleted "${pod.name}"`);
-        await sendSlackMessage(SLACK_CHANNEL_ID, `🗑️ Pod *${pod.name}* has been automatically deleted (expired or not approved).`);
+        const slackId = slackIdByPodName[podName];
+        if (slackId) {
+          await sendSlackMessage(slackId,
+            `Hey! Just letting you know that your pod ${pod.name} has been deleted as scheduled. Thanks for doing projects with us — hope it was constructive and successful! 🎉`
+          );
+        }
+        await sendSlackMessage(SLACK_CHANNEL_ID, `Pod *${pod.name}* has been automatically deleted.`);
       } else {
         console.log(`❌ Failed to delete "${pod.name}"`);
         await sendSlackMessage(SLACK_CHANNEL_ID, `❌ Failed to delete pod *${pod.name}* — please check manually.`);
