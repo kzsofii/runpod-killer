@@ -81,14 +81,14 @@ async function main() {
     // Send reminders
     if (slackId && days === 2) {
       await sendSlackMessage(slackId,
-        `Hello! Just a heads up — your pod ${podName} expires in 3 days at midnight. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Hope you're having fun working on your project!🦾 If you've already stopped working on it and killed your pod, feel free to disregard this message.`
+        `Hello! Just a heads up — your pod ${podName} expires in 3 days at midnight. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Hope you're having fun working on your project! 🦾`
       );
       console.log(`Sent 3-day reminder to ${slackId} for pod ${podName}`);
     }
 
     if (slackId && days === 0) {
       await sendSlackMessage(slackId,
-        `Hello! Your pod ${podName} expires tonight at midnight. Make sure to finish up by then because your pod will be deleted. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Good luck with your work!👩🏻‍💻 If you've already stopped working on it and killed your pod, feel free to disregard this message.`
+        `Hello! Your pod ${podName} expires tonight at midnight. Make sure to finish up by then because your pod will be deleted. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Good luck with your work! 👩🏻‍💻`
       );
       console.log(`Sent 1-day reminder to ${slackId} for pod ${podName}`);
     }
