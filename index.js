@@ -20,6 +20,7 @@ async function getApprovedUnexpiredPodNames() {
     const expiry = f["Date of Expiry"] ? new Date(f["Date of Expiry"]) : null;
     const podName = f["Name of Pod"];
     if (approved && expiry && expiry >= today && podName) {
+      // expiry is today or in the future — keep it
       validPodNames.add(podName.trim().toLowerCase());
     }
   }
