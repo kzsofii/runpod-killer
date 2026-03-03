@@ -56,7 +56,7 @@ async function main() {
 
   const records = await getAirtableRecords();
   const validPodNames = new Set();
-  const slackIdByPodName = {};
+  const slackIdByPodName = {}; // store for ALL approved pods, including expired
 
   for (const record of records) {
     const f = record.fields;
@@ -68,22 +68,27 @@ async function main() {
     if (!approved || !expiry || !podName) continue;
 
     const days = daysDiff(expiry);
+    const key = podName.trim().toLowerCase();
 
+    // Store Slack ID for all approved pods (even expired) so we can DM on deletion
+    if (slackId) slackIdByPodName[key] = slackId;
+
+    // Only keep unexpired pods alive
     if (days >= 0) {
-      validPodNames.add(podName.trim().toLowerCase());
-      if (slackId) slackIdByPodName[podName.trim().toLowerCase()] = slackId;
+      validPodNames.add(key);
     }
 
-    if (slackId && days === 3) {
+    // Send reminders
+    if (slackId && days === 2) {
       await sendSlackMessage(slackId,
-        `Hello! Just a heads up — your pod ${podName} expires in 3 days at midnight. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Hope you're having fun working on your project!🦾`
+        `Hello! Just a heads up — your pod ${podName} expires in 3 days at midnight. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Hope you're having fun working on your project!🦾 If you've already stopped working on it and killed your pod, feel free to disregard this message.`
       );
       console.log(`Sent 3-day reminder to ${slackId} for pod ${podName}`);
     }
 
-    if (slackId && days === 1) {
+    if (slackId && days === 0) {
       await sendSlackMessage(slackId,
-        `Hello! Your pod ${podName} expires tomorrow at midnight. Make sure to finish up by then because your pod will be deleted. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Good luck with your work!👩🏻‍💻`
+        `Hello! Your pod ${podName} expires tonight at midnight. Make sure to finish up by then because your pod will be deleted. In case you need an extension, submit another compute request form with the same pod name and we'll try to review it on time. Good luck with your work!👩🏻‍💻 If you've already stopped working on it and killed your pod, feel free to disregard this message.`
       );
       console.log(`Sent 1-day reminder to ${slackId} for pod ${podName}`);
     }
